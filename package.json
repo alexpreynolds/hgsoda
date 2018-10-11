@@ -1,0 +1,25 @@
+{
+  "name": "hgsoda",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "DEBUG=hgsoda:* node ./bin/www",
+    "dev": "DEBUG=hgsoda:* nodemon ./bin/www"
+  },
+  "dependencies": {
+    "bluebird": "^3.5.2",
+    "cookie-parser": "~1.4.3",
+    "debug": "~2.6.9",
+    "express": "~4.16.0",
+    "express-fileupload": "^1.0.0-alpha.1",
+    "http-errors": "~1.6.2",
+    "jade": "~1.11.0",
+    "morgan": "~1.9.0",
+    "puppeteer": "^1.9.0",
+    "sprintf-js": "^1.1.1",
+    "uuid": "^3.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.4"
+  }
+}
