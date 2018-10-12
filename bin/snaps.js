@@ -1,3 +1,5 @@
+#!/usr/bin/node
+
 const fs = require('fs');
 const path = require('path');
 const puppeteer = require('puppeteer');
@@ -90,7 +92,7 @@ async function stall(stallTime = 3000) {
     await new Promise(resolve => setTimeout(resolve, stallTime));
 };
 
-async function takeSnapshot(destDir, prefix, chr, start, stop) {
+async function takeSnapshot(destFn, chr, start, stop) {
     const width = config.viewWidth || 1024;
     const height = config.viewHeight || 1280;
 
@@ -134,10 +136,8 @@ async function takeSnapshot(destDir, prefix, chr, start, stop) {
     });
     */
 
-    const destPNGFn = path.join(destDir, [prefix, chr, start, stop].join('_') + '.png');
-    
     await page.screenshot({
-	path: destPNGFn,
+	path: destFn,
 	fullPage: true
     });
     await stall(2000);
@@ -157,12 +157,20 @@ if (!fs.existsSync(destDir)) {
 // Set up cleanup
 //
 function cleanup() {
-    inProgressSentinelFn = path.join(args.srcDir, 'inProgress');
+    var inProgressSentinelFn = path.join(args.srcDir, 'inProgress');
     fs.unlink(inProgressSentinelFn, function(err) {
 	if (err)
 	    throw err;
 	console.log('Debug: inProgress sentinel deleted');
-    });    
+    });
+    var snapsFn = path.join(args.srcDir, 'snaps.json');
+    var snapsObj = { 'snaps' : snaps };
+    var snapsJsonStr = JSON.stringify(snapsObj);
+    fs.writeFile(snapsFn, snapsJsonStr, function(err) {
+	if (err)
+	    throw err;
+	console.log('Debug: snaps list written');
+    });
 }
 
 //
@@ -170,18 +178,23 @@ function cleanup() {
 //
 const chunk = (array, batchSize = 2) => {
     const chunked = [];
-    for(let i = 0; i < array.length; i += batchSize) {
+    for (let i = 0; i < array.length; i += batchSize) {
 	chunked.push(array.slice(i, i + batchSize))
     }   
     return chunked;
 }
 var idx = 0;
+var snaps = [];
 const snapCoord = function(coord) {
     return new Promise(resolve => {
 	idx++;
 	console.log(idx);
-	const prefix = sprintf("%08d", idx);
-	takeSnapshot(destDir, prefix, coord.chr, coord.start, coord.stop)
+	var prefix = sprintf("%08d", idx);
+	var imgId = [prefix, coord.chr, coord.start, coord.stop].join('_');
+	var imgFn = imgId + '.png';
+	var destPNGFn = path.join(destDir, imgFn);
+	snaps.push(imgId);
+	takeSnapshot(destPNGFn, coord.chr, coord.start, coord.stop);
 	setTimeout(resolve, 10000);
     });
 };

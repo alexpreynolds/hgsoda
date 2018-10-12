@@ -103,3 +103,12 @@ input[type="submit"] {
     font-weight: bold;
     background-color: #dcdcff;
 }
+
+.portrait-slide img {
+    height:100vh;
+    margin: 0 auto;
+}
+
+img {
+    width: none !important;
+}

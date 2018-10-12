@@ -1,4 +1,4 @@
-export const host = 'ec2-18-191-162-105.us-east-2.compute.amazonaws.com';
+export const host = 'ec2-18-188-250-191.us-east-2.compute.amazonaws.com';
 export const port = '3000';
 
 export const defaults = {

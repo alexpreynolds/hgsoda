@@ -8,7 +8,10 @@
   },
   "dependencies": {
     "bluebird": "^3.5.2",
+    "child-process": "^1.0.2",
+    "child-process-async": "^1.0.1",
     "cookie-parser": "~1.4.3",
+    "cors": "^2.8.4",
     "debug": "~2.6.9",
     "express": "~4.16.0",
     "express-fileupload": "^1.0.0-alpha.1",

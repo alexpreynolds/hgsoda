@@ -1,5 +1,10 @@
 import React, { Component } from 'react';
+import Spinner from 'react-svg-spinner';
+import ImageGallery from 'react-image-gallery';
+import axios from 'axios';
+
 import './App.css';
+import './react-image-gallery-custom-image-gallery.css';
 import * as appConstants from './Constants';
 
 class App extends Component {
@@ -9,6 +14,9 @@ class App extends Component {
         this.state = {
             jid : "",
             upload : true,
+            pending : true,
+            snaps : [],
+            galleryItems : [],
             padding : appConstants.defaults.padding,
             viewWidth : appConstants.defaults.viewWidth,
             viewHeight : appConstants.defaults.viewHeight,
@@ -43,24 +51,80 @@ class App extends Component {
             return result;
         }
         var obj = getJsonFromUrl();
+        //
+        // If jid is a parameter, initialize or update pending state
+        //
         if (obj && obj.jid && obj.jid.length > 0) {
             this.setState({
                 jid: obj.jid,
                 upload: false
+            }, function() {
+                var self = this;
+                const completionStateRouteURL = `http://${appConstants.host}:${appConstants.port}/state/${this.state.jid}`;
+                function fetchPendingState() {
+                    return fetch(completionStateRouteURL)
+                        .then(
+                            function(response) {
+                                if (response.status !== 200) {
+                                    console.log('Error: ' + response.status);
+                                    console.log('No longer checking pending state...');
+                                    clearInterval(intervalObj);
+                                    return;
+                                }
+                                response.json().then(function(data) {
+                                    self.setState({
+                                        pending : data.pending
+                                    }, function() {
+                                        if (!self.state.pending && intervalObj) {
+                                            console.log('No longer checking pending state...');
+                                            clearInterval(intervalObj);
+                                            const snapsRouteURL = `http://${appConstants.host}:${appConstants.port}/snaps/${self.state.jid}`;
+                                            axios.get(snapsRouteURL)
+                                                .then(function(res) {
+                                                    var snaps = res.data.snaps;
+                                                    var galleryItems = [];
+                                                    snaps.forEach(function(iid) {
+                                                        var original = `http://${appConstants.host}:${appConstants.port}/snap/${self.state.jid}/` + iid;
+                                                        galleryItems.push({
+                                                            original : original,
+                                                            originalClass : 'portrait-slide',
+                                                            sizes : '(max-width: 1024px) 100vw'
+                                                        });
+                                                    });
+                                                    self.setState({
+                                                        snaps : snaps,
+                                                        galleryItems : galleryItems
+                                                    });
+                                                })
+                                                .catch(function(err) {
+                                                    console.log(err);
+                                                });
+                                        }
+                                    });
+                                });
+                            }
+                        )
+                        .catch(function(err) {
+                            console.log(err);
+                        });
+                }
+                const intervalObj = setInterval(() => {
+                    console.log('Checking pending state...');
+                    fetchPendingState();
+                }, 5000);
             });
         }
     }
 
     render() {
         if (this.state.upload) {
-            var backendURL = `http://${appConstants.host}:${appConstants.port}/upload`;
-            
+            var uploadRouteURL = `http://${appConstants.host}:${appConstants.port}/upload`;            
             return (
                 <div className="App" ref="appContainer">
                   <h1>hgSoda</h1>
                   <form ref='uploadForm' 
                         id='uploadForm' 
-                        action={backendURL}
+                        action={uploadRouteURL}
                         method='post'
                         className='uploadForm'
                         encType="multipart/form-data">
@@ -105,10 +169,25 @@ class App extends Component {
                 </div>
             );
         }
-        else {
+        else if (this.state.pending) {
             return (
                 <div className="App" ref="appContainer">
                   <h1>{this.state.jid}</h1>
+                  <div>
+                    <Spinner />
+                  </div>
+                </div>
+            );
+        }
+        else {
+            return (
+                <div className="App" ref="appContainer">
+                  <div>
+                    <ImageGallery
+                      items={this.state.galleryItems}
+                      lazyLoad={true}
+                    />
+                  </div>
                 </div>
             );
         }

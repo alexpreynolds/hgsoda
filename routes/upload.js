@@ -37,13 +37,16 @@ router.post('/', function(req, res) {
 
     // Set up destination filename and folder, if necessary
     var jid = uuidv4();
-    var destDir = constants.ASSETS + '/' + jid;
+    var destDir = path.join(constants.ASSETS, jid);
+    if (!fs.existsSync(constants.ASSETS)) {
+	fs.mkdirSync(constants.ASSETS);
+    }
     if (!fs.existsSync(destDir)) {
 	fs.mkdirSync(destDir);
     }
 
     // Use the mv() method to place the file on the server
-    var destCoordsFn = destDir + '/' + 'coordinates.bed';
+    var destCoordsFn = path.join(destDir, 'coordinates.bed');
     var destCoordsFnPromise = coordsFn.mv(destCoordsFn)
 	.then(function() {
 	    return "[" + jid + "] copied coordinates";
@@ -54,7 +57,7 @@ router.post('/', function(req, res) {
 	});
 
     // Write job params to JSON file
-    var destConfigFn = destDir + '/' + 'config.json';
+    var destConfigFn = path.join(destDir, 'config.json');
     var objConfig = {
 	padding : parseInt(req.body.padding),
 	viewWidth : parseInt(req.body.viewWidth),
@@ -76,7 +79,7 @@ router.post('/', function(req, res) {
 	});
 
     // Write in-progress token to destDir
-    var destInProgressTokenFn = destDir + '/' + 'inProgress';
+    var destInProgressTokenFn = path.join(destDir, 'inProgress');
     var inProgressTokenFnPromise = fsWriteFilePromisified(destInProgressTokenFn, '')
 	.then(function() {
 	    return "[" + jid + "] touched in-progress token";
@@ -93,33 +96,31 @@ router.post('/', function(req, res) {
 	.then(function(values) {
 	    // Log actions
 	    console.log(values);
-
-	    // Start the script that makes snapshots
-	    var snapshotScript = path.join(__dirname, '..', 'bin', 'snaps.js');
-	    var snapshotScriptSpawn = spawn('node',
-					    [snapshotScript, 'srcDir='+destDir],
-					    {
-						detached: true,
-						shell: true,
-						env: process.env
-					    }
-					   );
-	    snapshotScriptSpawn.stdout.on( 'data', data => {
-		console.log( `stdout: ${data}` );
-	    } );
-	    snapshotScriptSpawn.stderr.on( 'data', data => {
-		console.log( `stderr: ${data}` );
-	    } );	    
-	    snapshotScriptSpawn.on( 'close', code => {
-		console.log( `child process exited with code ${code}` );
-	    } );
-	    
-	    // Redirect back to React app
-	    res.status(301).redirect('http://' + (process.env.HOST || constants.HOST) + '/?jid=' + jid);
 	})
 	.catch(function(errs) {
 	    console.log('upload errors:', errs);
 	    return res.status(500).send(errs);
+	})
+	.finally(function() {
+	    // Redirect client 
+	    res.status(301).redirect('http://' + (process.env.HOST || constants.HOST) + '/?jid=' + jid);
+
+	    // Start the script that makes snapshots
+	    console.log("starting snap script...");
+	    var snapshotJsScript = path.join(__dirname, '..', 'bin', 'snaps.js');
+	    var snapshotScriptSpawn = spawn(snapshotJsScript,
+					    ['srcDir=\"'+destDir+'\"'],
+					    {
+						stdio : 'ignore',
+						detached : true,
+						shell : true,
+						env : process.env
+					    }
+					   );
+	    // Ensure that the spawned script is detached
+	    // cf. https://stackoverflow.com/questions/12871740/how-to-detach-a-spawned-child-process-in-a-node-js-script
+	    snapshotScriptSpawn.unref();
+	    console.log("snap script started and detached...");
 	});
 });
 
