@@ -158,19 +158,13 @@ if (!fs.existsSync(destDir)) {
 //
 function cleanup() {
     var inProgressSentinelFn = path.join(args.srcDir, 'inProgress');
-    fs.unlink(inProgressSentinelFn, function(err) {
-	if (err)
-	    throw err;
-	console.log('Debug: inProgress sentinel deleted');
-    });
+    fs.unlinkSync(inProgressSentinelFn);
+    console.log('Debug: inProgress sentinel deleted');
     var snapsFn = path.join(args.srcDir, 'snaps.json');
     var snapsObj = { 'snaps' : snaps };
     var snapsJsonStr = JSON.stringify(snapsObj);
-    fs.writeFile(snapsFn, snapsJsonStr, function(err) {
-	if (err)
-	    throw err;
-	console.log('Debug: snaps list written');
-    });
+    fs.writeFileSync(snapsFn, snapsJsonStr);
+    console.log('Debug: snaps list written');
 }
 
 //
@@ -207,4 +201,8 @@ const promiseChain = chunkedData.reduce(
     reducer,
     Promise.resolve()
 );
-promiseChain.then(() => cleanup());
+promiseChain.then(() => {
+    setTimeout(function() {
+	cleanup();
+    }, 2000);
+});

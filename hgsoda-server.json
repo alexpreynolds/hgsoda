@@ -1,0 +1,17 @@
+{
+    apps : [
+	{
+	    name: "hgsoda-server",
+	    script: "npm run start",
+	    interpreter: "none",
+	    watch: false,
+	    cwd: "/home/ubuntu/git/hgsoda",
+	    env: {
+		"DEBUG": "hgsoda:*",
+		"PORT": 3000,
+		"NODE_ENV": "production",
+		"HOST": "hgsoda.altius.org"
+            }
+	}
+    ]
+}

@@ -21,7 +21,7 @@ Both the frontend and backend need to run on separate ports. Here's an example o
 $ cd git/hgsoda
 $ mkdir -p assets
 $ npm install
-$ export AWS_HOST="http://ec2-18-188-250-191.us-east-2.compute.amazonaws.com"
+$ export AWS_HOST="http://hgsoda.altius.org"
 $ PORT=3000 HOST=${AWS_HOST} npm run dev
 ```
 
@@ -30,69 +30,67 @@ $ PORT=3000 HOST=${AWS_HOST} npm run dev
 ```
 $ cd git/hgsoda/client
 $ npm install
-$ export AWS_HOST="http://ec2-18-188-250-191.us-east-2.compute.amazonaws.com"
+$ export AWS_HOST="http://hgsoda.altius.org"
 $ sudo PORT=80 HOST=${AWS_HOST} npm run start
 ```
 
-### PM2 deployment
+### PM2 deployment (production)
 
 #### Installation
 
 ```
-$ npm install pm2 -g
+$ sudo npm install pm2 -g
 $ sudo pm2 startup systemd
+$ sudo npm i -g serve
+$ sudo ln -s /home/ubuntu/node-v10.12.0-linux-x64/bin/serve /usr/bin/serve
 ```
 
 #### Backend
 
+We disable `watch` as the contents of this folder can change during snapshot processing. If `watch` is enabled, the node process will restart and potentially interrupt the creation of a gallery, which is bad.
+
 ```
 $ cd git/hgsoda
-$ cat > hgsoda-express.js
-module.exports = {
-  apps : [
-      {
-        name: "hgsoda-express",
-        script: "npm run dev",
-        watch: true,
-        env: {
-            "PORT": 3000,
-	    "HOST": "ec2-18-188-250-191.us-east-2.compute.amazonaws.com",
-            "NODE_ENV": "development"
-        },
-        env_production: {
-            "PORT": 3000,
-	    "HOST": "ec2-18-188-250-191.us-east-2.compute.amazonaws.com",	    
-            "NODE_ENV": "production",
+$ cat > hgsoda-server.json
+{
+    apps : [
+        {
+            name: "hgsoda-server",
+            script: "npm run build",
+            interpreter: "node",
+            watch: false,
+	    cwd: "/home/ubuntu/git/hgsoda",
+            env: {
+                "DEBUG": "hgsoda:*",
+                "PORT": 3000,
+                "NODE_ENV": "production",
+                "HOST": "hgsoda.altius.org"
+            }
         }
-      }
-  ]
+    ]
 }
-$ sudo pm2 start hgsoda-express.js --env production
+$ sudo pm2 start hgsoda-server.json
 ```
 
 #### Frontend
 
+For the frontend, we serve a static build of the React application. We should be able to safely enable `watch` here, as we do not expect the contents of this folder to change. However, if we do change this folder's contents, this can affect the backend process and so we disable this parameter.
+
 ```
-$ cd git/hgsoda
-$ cat > hgsoda-client.js
-module.exports = {
-  apps : [
-      {
-        name: "hgsoda-client",
-        script: "npm run start",
-        watch: true,
-        env: {
-            "PORT": 80,
-	    "HOST": "ec2-18-188-250-191.us-east-2.compute.amazonaws.com",
-            "NODE_ENV": "development"
-        },
-        env_production: {
-            "PORT": 80,
-	    "HOST": "ec2-18-188-250-191.us-east-2.compute.amazonaws.com",	    
-            "NODE_ENV": "production",
-        }
-      }
-  ]
+$ cd git/hgsoda/client
+$ npm run build
+$ cat > hgsoda-client.json
+{
+    apps : [
+	{
+	    name: "hgsoda-client",
+	    script: "npx",
+	    interpreter: "none",
+	    watch: false,
+	    cwd: "/home/ubuntu/git/hgsoda/client",
+	    args: "serve -l 80 -s build"
+	}
+    ]
 }
-$ sudo pm2 start hgsoda-client.js --env production
+$ sudo pm2 start hgsoda-client.json
 ```

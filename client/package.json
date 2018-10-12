@@ -8,7 +8,8 @@
       "react-dom": "^16.5.2",
       "react-image-gallery": "^0.8.12",
       "react-scripts": "2.0.4",
-      "react-svg-spinner": "^1.0.1"
+      "react-svg-spinner": "^1.0.1",
+      "serve": "^10.0.2"
    },
    "scripts": {
       "start": "react-scripts start",
@@ -16,7 +17,7 @@
       "test": "react-scripts test",
       "eject": "react-scripts eject"
    },
-   "proxy": "http://localhost:3000",
+   "proxy": "http://hgsoda.altius.org:3000",
    "eslintConfig": {
       "extends": "react-app"
    },

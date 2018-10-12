@@ -106,6 +106,7 @@ router.post('/', function(req, res) {
 	    res.status(301).redirect('http://' + (process.env.HOST || constants.HOST) + '/?jid=' + jid);
 
 	    // Start the script that makes snapshots
+	    /*
 	    console.log("starting snap script...");
 	    var snapshotJsScript = path.join(__dirname, '..', 'bin', 'snaps.js');
 	    var snapshotScriptSpawn = spawn(snapshotJsScript,
@@ -121,6 +122,7 @@ router.post('/', function(req, res) {
 	    // cf. https://stackoverflow.com/questions/12871740/how-to-detach-a-spawned-child-process-in-a-node-js-script
 	    snapshotScriptSpawn.unref();
 	    console.log("snap script started and detached...");
+	    */
 	});
 });
 

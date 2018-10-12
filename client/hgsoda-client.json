@@ -1,0 +1,13 @@
+{
+    apps : [
+	{
+	    name: "hgsoda-client",
+	    script: "npx",
+	    interpreter: "none",
+	    watch: false,
+	    cwd: "/home/ubuntu/git/hgsoda/client",	    
+	    args: "serve -l 80 -s build"
+	}
+    ]
+}
+
