@@ -5,6 +5,9 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 const sprintf = require('sprintf-js').sprintf;
 const Promise = require('bluebird');
+const validator = require("email-validator");
+const sendmail = require('sendmail')();
+const constants = require('../constants');
 
 const args = process.argv
     .slice(2)
@@ -13,6 +16,12 @@ const args = process.argv
         args[value] = key;
         return args;
     }, {});
+
+//
+// Get job ID (jid)
+//
+const jids = args.srcDir.split(path.sep);
+const jid = jids[jids.length - 1];
 
 //
 // Read in configuration parameters
@@ -52,6 +61,18 @@ try {
 }
 catch(err) {
     console.log('Error: Could not override padding!');
+    throw err;
+}
+
+//
+// Validate email address (if specified in config or on command-line)
+//
+try {
+    config.email = args.email || config.email;
+    config.email = validator.validate(config.email) ? config.email : null;
+}
+catch(err) {
+    console.log('Error: Could not validate email address!');
     throw err;
 }
 
@@ -136,10 +157,16 @@ async function takeSnapshot(destFn, chr, start, stop) {
     });
     */
 
-    await page.screenshot({
-	path: destFn,
-	fullPage: true
-    });
+    try {
+	await page.screenshot({
+	    path: destFn,
+	    fullPage: true
+	});
+    }
+    catch (error) {
+	console.log(error);
+    }
+    
     await stall(2000);
     
     await browser.close();
@@ -151,20 +178,6 @@ async function takeSnapshot(destFn, chr, start, stop) {
 const destDir = path.join(args.srcDir, 'images');
 if (!fs.existsSync(destDir)) {
     fs.mkdirSync(destDir);
-}
-
-//
-// Set up cleanup
-//
-function cleanup() {
-    var inProgressSentinelFn = path.join(args.srcDir, 'inProgress');
-    fs.unlinkSync(inProgressSentinelFn);
-    console.log('Debug: inProgress sentinel deleted');
-    var snapsFn = path.join(args.srcDir, 'snaps.json');
-    var snapsObj = { 'snaps' : snaps };
-    var snapsJsonStr = JSON.stringify(snapsObj);
-    fs.writeFileSync(snapsFn, snapsJsonStr);
-    console.log('Debug: snaps list written');
 }
 
 //
@@ -203,6 +216,35 @@ const promiseChain = chunkedData.reduce(
 );
 promiseChain.then(() => {
     setTimeout(function() {
-	cleanup();
+	wrapup();
     }, 2000);
 });
+
+//
+// Wrap up
+//
+function wrapup() {
+    var inProgressSentinelFn = path.join(args.srcDir, 'inProgress');
+    fs.unlinkSync(inProgressSentinelFn);
+    console.log('Debug: inProgress sentinel deleted');
+    var snapsFn = path.join(args.srcDir, 'snaps.json');
+    var snapsObj = { 'snaps' : snaps };
+    var snapsJsonStr = JSON.stringify(snapsObj);
+    fs.writeFileSync(snapsFn, snapsJsonStr);
+    console.log('Debug: snaps list written');
+    //
+    // email
+    //
+    if (config.email) {
+	var destURL = "http://" + constants.HOST + "/?jid=" + jid;
+	sendmail({
+	    from: 'no-reply@hgsoda.altius.org',
+	    to: config.email,
+	    subject: "hgSoda gallery ready",
+	    html: 'Your <a href=\"' + destURL + '\">hgSoda gallery</a> is ready: ' + destURL
+	}, function(err, reply) {
+	    console.log(err && err.stack);
+	    console.dir(reply);
+	});
+    }
+}

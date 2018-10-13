@@ -65,7 +65,8 @@ router.post('/', function(req, res) {
 	hgServerURL : req.body.hgServerURL,
 	hgViewconfId : req.body.hgViewconfId,
 	hgViewUid : req.body.hgViewUid,
-	hgAssembly : req.body.hgAssembly
+	hgAssembly : req.body.hgAssembly,
+	email : req.body.email || ""
     };
     var jsonConfigStr = JSON.stringify(objConfig);
     var fsWriteFilePromisified = util.promisify(fs.writeFile);

@@ -17,6 +17,7 @@ class App extends Component {
             pending : true,
             snaps : [],
             galleryItems : [],
+            email : "",
             padding : appConstants.defaults.padding,
             viewWidth : appConstants.defaults.viewWidth,
             viewHeight : appConstants.defaults.viewHeight,
@@ -159,10 +160,14 @@ class App extends Component {
                         <label htmlFor="hgViewUid"><span>Assembly</span></label>
                         <input type="text" name="hgAssembly" value={this.state.hgAssembly} onChange={this.onChange} />
                       </div>
-                      <h3>Coordinates</h3>
+                      <h3>Job</h3>
+                      <div>
+                        <label htmlFor="email"><span>Email address (to notify on gallery completion)</span></label>
+                        <input type="text" name="email" value={this.state.email} onChange={this.onChange} />
+                      </div>
                       <div>
                         <label htmlFor="file"><span>BED coordinates</span></label>
-                        <input type="file" name="coordsFn" /> <input type='submit' value='Upload' />
+                        <input type="file" name="coordsFn" /> <input type='submit' value='Submit' />
                       </div>
                     </fieldset>
                   </form> 

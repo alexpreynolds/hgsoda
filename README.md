@@ -94,3 +94,13 @@ $ cat > hgsoda-client.json
 }
 $ sudo pm2 start hgsoda-client.json
 ```
+
+#### Other
+
+Once `pm2` is set up, use:
+
+```
+$ sudo pm2 save
+```
+
+to persist the process configuration between reboots of the host server.

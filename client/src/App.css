@@ -49,6 +49,7 @@ input, textarea, select {
     padding: 2px 5px 4px;
     border: 0 none;
     border-radius: 2px;
+    width: 15em;
 }
 
 /* flexbox styles */
@@ -59,12 +60,13 @@ fieldset div {
 
 label {
     order: 1;
-    width: 15em;
-    text-align: left;
+    width: 22em;
+    text-align: right;
     padding-right: 0.5em;
     white-space: nowrap;
     user-select: none;
     cursor: pointer;
+    font-size: 0.8em;
 }
 
 input, textarea, select {
